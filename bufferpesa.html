@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BufferPesa — Kenya Commercial Scorecard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --navy:   #0D2B55;
+  --blue:   #185FA5;
+  --teal:   #1D9E75;
+  --green:  #3B6D11;
+  --amber:  #C27A1A;
+  --purple: #533AB7;
+  --red:    #A32D2D;
+  --gray:   #888780;
+  --bg:     #F2F0EB;
+  --card:   #FAFAF8;
+  --border: #DDD9D0;
+  --text:   #1A1917;
+  --muted:  #6B6860;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 15px; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ── NAV ── */
+nav {
+  background: var(--navy);
+  padding: 0 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  position: sticky; top: 0; z-index: 100;
+}
+.nav-brand { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.15rem; color: #fff; letter-spacing: -.01em; }
+.nav-brand span { color: #4DB896; }
+.nav-date { font-size: .78rem; color: rgba(255,255,255,.5); }
+.nav-tabs { display: flex; gap: 2px; }
+.nav-tab {
+  padding: 6px 16px; border-radius: 6px; font-size: .82rem; font-weight: 500;
+  color: rgba(255,255,255,.6); cursor: pointer; transition: all .2s; border: none; background: none;
+}
+.nav-tab:hover { color: #fff; background: rgba(255,255,255,.08); }
+.nav-tab.active { color: #fff; background: rgba(255,255,255,.15); }
+
+/* ── LAYOUT ── */
+.shell { display: flex; }
+aside {
+  width: 220px; flex-shrink: 0;
+  background: var(--card);
+  border-right: 1px solid var(--border);
+  min-height: calc(100vh - 56px);
+  padding: 1.5rem 1rem;
+  position: sticky; top: 56px; height: calc(100vh - 56px); overflow-y: auto;
+}
+.aside-section { margin-bottom: 1.5rem; }
+.aside-label { font-size: .68rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: .6rem; padding-left: .4rem; }
+.aside-item {
+  display: flex; align-items: center; gap: .5rem;
+  padding: .45rem .6rem; border-radius: 8px; cursor: pointer;
+  font-size: .82rem; color: var(--muted); transition: all .15s;
+  border: none; background: none; width: 100%; text-align: left;
+}
+.aside-item:hover { background: var(--bg); color: var(--text); }
+.aside-item.active { background: #E8F1FB; color: var(--blue); font-weight: 500; }
+.aside-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+main { flex: 1; padding: 1.75rem 2rem; max-width: 1100px; }
+
+/* ── HEADER ── */
+.page-header { margin-bottom: 1.75rem; }
+.page-header h1 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.6rem; color: var(--navy); letter-spacing: -.02em; }
+.page-header p { font-size: .85rem; color: var(--muted); margin-top: .3rem; }
+.breadcrumb { display: flex; align-items: center; gap: .4rem; font-size: .75rem; color: var(--muted); margin-bottom: .5rem; }
+.breadcrumb span { color: var(--border); }
+
+/* ── SECTION TITLE ── */
+.section-head { display: flex; align-items: center; gap: .75rem; margin-bottom: 1rem; margin-top: 1.75rem; }
+.section-head h2 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .95rem; color: var(--navy); }
+.section-head hr { flex: 1; border: none; border-top: 1px solid var(--border); }
+
+/* ── KPI CARDS ── */
+.kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: .25rem; }
+.kpi-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem .9rem;
+  cursor: pointer;
+  transition: all .2s;
+  position: relative; overflow: hidden;
+}
+.kpi-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--c, var(--blue)); border-radius: 12px 12px 0 0;
+}
+.kpi-card:hover { border-color: var(--c, var(--blue)); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,.08); }
+.kpi-card.active { border-color: var(--c, var(--blue)); background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,.1); }
+.kpi-lbl { font-size: .7rem; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: .4rem; }
+.kpi-val { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 2rem; color: var(--c, var(--navy)); line-height: 1; }
+.kpi-sub { font-size: .72rem; color: var(--muted); margin-top: .35rem; }
+
+/* ── CHART GRID ── */
+.chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.chart-row.triple { grid-template-columns: 1fr 1fr 1fr; }
+.chart-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.2rem 1.25rem;
+  position: relative;
+}
+.chart-card h3 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .88rem; color: var(--navy); margin-bottom: .25rem; }
+.chart-card .chart-sub { font-size: .75rem; color: var(--muted); margin-bottom: 1rem; }
+.chart-wrap { position: relative; height: 220px; }
+.chart-wrap.tall { height: 280px; }
+.chart-wrap.short { height: 170px; }
+
+/* ── FILTER PILLS ── */
+.filter-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: .8rem; }
+.pill {
+  padding: 4px 12px; border-radius: 20px; font-size: .75rem; font-weight: 500;
+  border: 1px solid var(--border); background: var(--bg); color: var(--muted);
+  cursor: pointer; transition: all .15s;
+}
+.pill:hover { border-color: var(--blue); color: var(--blue); }
+.pill.on { background: var(--blue); color: #fff; border-color: var(--blue); }
+
+/* ── LEGEND ── */
+.legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: .8rem; }
+.leg-item { display: flex; align-items: center; gap: 5px; font-size: .73rem; color: var(--muted); }
+.leg-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── KENYA MAP ── */
+.map-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.2rem 1.25rem;
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 1.5rem;
+  align-items: start;
+}
+.map-card h3 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .88rem; color: var(--navy); margin-bottom: .25rem; }
+.map-card .chart-sub { font-size: .75rem; color: var(--muted); margin-bottom: 1rem; }
+#kenya-svg { width: 100%; height: 360px; }
+.region-marker { cursor: pointer; transition: all .2s; }
+.region-bubble { transition: all .2s; }
+.region-marker:hover .region-bubble { filter: brightness(1.15); transform: scale(1.1); }
+.map-tooltip {
+  position: fixed; background: var(--navy); color: #fff;
+  padding: 8px 12px; border-radius: 8px; font-size: .78rem; pointer-events: none;
+  opacity: 0; transition: opacity .15s; z-index: 200; min-width: 140px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.25);
+}
+.map-legend { margin-top: .5rem; }
+.map-region-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.map-region-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: 8px; cursor: pointer;
+  transition: background .15s;
+}
+.map-region-item:hover { background: var(--bg); }
+.map-region-item.active { background: #E8F1FB; }
+.mri-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.mri-name { font-size: .82rem; font-weight: 500; color: var(--text); flex: 1; }
+.mri-count { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .95rem; }
+
+/* ── FUNNEL ── */
+.funnel-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.2rem 1.25rem;
+}
+.funnel-card h3 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .88rem; color: var(--navy); margin-bottom: .25rem; }
+.funnel-card .chart-sub { font-size: .75rem; color: var(--muted); margin-bottom: 1rem; }
+.funnel-rows { display: flex; flex-direction: column; gap: 8px; }
+.f-row { display: flex; align-items: center; gap: 10px; }
+.f-label { font-size: .78rem; color: var(--muted); width: 150px; flex-shrink: 0; }
+.f-track { flex: 1; height: 24px; background: var(--bg); border-radius: 6px; overflow: hidden; position: relative; }
+.f-bar {
+  height: 100%; border-radius: 6px; display: flex; align-items: center;
+  padding-left: 10px; transition: width .7s cubic-bezier(.4,0,.2,1);
+  min-width: 0;
+}
+.f-bar-lbl { font-size: .72rem; font-weight: 600; color: #fff; white-space: nowrap; }
+.f-pct { font-size: .75rem; color: var(--muted); width: 40px; text-align: right; flex-shrink: 0; }
+.f-count { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .9rem; width: 28px; text-align: right; flex-shrink: 0; }
+.f-drop { font-size: .68rem; color: var(--red); width: 56px; text-align: right; flex-shrink: 0; }
+
+/* ── SCORECARD TABLE ── */
+.sc-table-wrap {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.sc-table-wrap h3 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .88rem; color: var(--navy); padding: 1.1rem 1.25rem .25rem; }
+.sc-table-wrap .chart-sub { font-size: .75rem; color: var(--muted); padding: 0 1.25rem .75rem; }
+table.sc { width: 100%; border-collapse: collapse; font-size: .78rem; }
+table.sc th {
+  background: var(--navy); color: rgba(255,255,255,.85);
+  padding: 8px 12px; text-align: left; font-weight: 600;
+  font-size: .7rem; text-transform: uppercase; letter-spacing: .05em;
+}
+table.sc td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; color: var(--text); line-height: 1.5; }
+table.sc tr:last-child td { border-bottom: none; }
+table.sc tr:nth-child(even) td { background: #FAFAF8; }
+.badge {
+  display: inline-block; padding: 2px 9px; border-radius: 20px;
+  font-size: .7rem; font-weight: 600; white-space: nowrap;
+}
+.badge-tracked { background: #EAF3DE; color: #3B6D11; }
+.badge-partial  { background: #FEF3DC; color: #854F0B; }
+.badge-notyet   { background: #FCEBEB; color: #A32D2D; }
+.badge-owner    { background: #E6F1FB; color: #185FA5; }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+.kpi-card { animation: fadeUp .4s ease both; }
+.kpi-card:nth-child(1) { animation-delay: .05s; }
+.kpi-card:nth-child(2) { animation-delay: .1s; }
+.kpi-card:nth-child(3) { animation-delay: .15s; }
+.kpi-card:nth-child(4) { animation-delay: .2s; }
+.kpi-card:nth-child(5) { animation-delay: .25s; }
+.kpi-card:nth-child(6) { animation-delay: .3s; }
+
+/* ── TOOLTIP ── */
+.map-tooltip b { display: block; margin-bottom: 3px; font-family: 'Syne', sans-serif; }
+
+/* scrollbar */
+aside::-webkit-scrollbar { width: 4px; }
+aside::-webkit-scrollbar-track { background: transparent; }
+aside::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">Buffer<span>Pesa</span></div>
+  <div class="nav-tabs">
+    <button class="nav-tab active">Overview</button>
+    <button class="nav-tab">Funnel</button>
+    <button class="nav-tab">Map</button>
+    <button class="nav-tab">Scorecard</button>
+  </div>
+  <div class="nav-date">Kenya · April 2026</div>
+</nav>
+
+<div class="shell">
+<aside>
+  <div class="aside-section">
+    <div class="aside-label">Metrics</div>
+    <button class="aside-item active" onclick="setMetric('all',this)">
+      <span class="aside-dot" style="background:var(--navy)"></span> All regions
+    </button>
+    <button class="aside-item" onclick="setMetric('kajiado',this)">
+      <span class="aside-dot" style="background:#185FA5"></span> Kajiado
+    </button>
+    <button class="aside-item" onclick="setMetric('kiambu',this)">
+      <span class="aside-dot" style="background:#1D9E75"></span> Kiambu Demo
+    </button>
+    <button class="aside-item" onclick="setMetric('voi',this)">
+      <span class="aside-dot" style="background:#533AB7"></span> Voi Demo
+    </button>
+    <button class="aside-item" onclick="setMetric('daniel',this)">
+      <span class="aside-dot" style="background:#C27A1A"></span> Daniel KAM
+    </button>
+    <button class="aside-item" onclick="setMetric('lakebasin',this)">
+      <span class="aside-dot" style="background:#A32D2D"></span> Lakebasin
+    </button>
+  </div>
+  <div class="aside-section">
+    <div class="aside-label">Journey Stage</div>
+    <button class="aside-item" onclick="highlightStage('signup')">
+      <span class="aside-dot" style="background:var(--navy)"></span> Sign-up
+    </button>
+    <button class="aside-item" onclick="highlightStage('app')">
+      <span class="aside-dot" style="background:var(--blue)"></span> App Download
+    </button>
+    <button class="aside-item" onclick="highlightStage('kyc')">
+      <span class="aside-dot" style="background:var(--teal)"></span> KYC
+    </button>
+    <button class="aside-item" onclick="highlightStage('activation')">
+      <span class="aside-dot" style="background:var(--purple)"></span> Activation
+    </button>
+    <button class="aside-item" onclick="highlightStage('invoice')">
+      <span class="aside-dot" style="background:var(--amber)"></span> Invoicing
+    </button>
+    <button class="aside-item" onclick="highlightStage('transact')">
+      <span class="aside-dot" style="background:var(--red)"></span> Transacting
+    </button>
+  </div>
+  <div class="aside-section">
+    <div class="aside-label">KYC Status</div>
+    <button class="aside-item" onclick="filterKYC('all')">
+      <span class="aside-dot" style="background:var(--gray)"></span> All
+    </button>
+    <button class="aside-item" onclick="filterKYC('approved')">
+      <span class="aside-dot" style="background:var(--teal)"></span> Approved (19)
+    </button>
+    <button class="aside-item" onclick="filterKYC('pending')">
+      <span class="aside-dot" style="background:var(--amber)"></span> Pending (10)
+    </button>
+    <button class="aside-item" onclick="filterKYC('none')">
+      <span class="aside-dot" style="background:var(--red)"></span> Not started (15)
+    </button>
+  </div>
+</aside>
+
+<main>
+  <div class="breadcrumb">BufferPesa <span>›</span> Kenya <span>›</span> Commercial Scorecard</div>
+  <div class="page-header">
+    <h1>Kenya Commercial Scorecard</h1>
+    <p>User journey: Sign-up → App Download → KYC → Activation → Invoicing → Transactions</p>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="kpi-grid">
+    <div class="kpi-card active" style="--c:#0D2B55" onclick="switchBar('signups',this)">
+      <div class="kpi-lbl">Total Vets</div>
+      <div class="kpi-val" id="kv-signups">44</div>
+      <div class="kpi-sub">Engaged across 5 regions</div>
+    </div>
+    <div class="kpi-card" style="--c:#185FA5" onclick="switchBar('apps',this)">
+      <div class="kpi-lbl">Apps Downloaded</div>
+      <div class="kpi-val" id="kv-apps">26</div>
+      <div class="kpi-sub">59% of total vets</div>
+    </div>
+    <div class="kpi-card" style="--c:#1D9E75" onclick="switchBar('kyc_approved',this)">
+      <div class="kpi-lbl">KYC Approved</div>
+      <div class="kpi-val" id="kv-kyc_approved">19</div>
+      <div class="kpi-sub">73% of downloads</div>
+    </div>
+    <div class="kpi-card" style="--c:#C27A1A" onclick="switchBar('kyc_pending',this)">
+      <div class="kpi-lbl">KYC Pending</div>
+      <div class="kpi-val" id="kv-kyc_pending">10</div>
+      <div class="kpi-sub">38% of downloads</div>
+    </div>
+    <div class="kpi-card" style="--c:#533AB7" onclick="switchBar('activated',this)">
+      <div class="kpi-lbl">Fully Activated</div>
+      <div class="kpi-val" id="kv-activated">0</div>
+      <div class="kpi-sub">Service + catalog setup</div>
+    </div>
+    <div class="kpi-card" style="--c:#A32D2D" onclick="switchBar('transacting',this)">
+      <div class="kpi-lbl">Active Transacting</div>
+      <div class="kpi-val" id="kv-transacting">0</div>
+      <div class="kpi-sub">Collections or sales</div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 1 -->
+  <div class="section-head"><h2>Regional Breakdown</h2><hr/></div>
+  <div class="chart-row">
+    <div class="chart-card">
+      <h3 id="bar-title">Vets by Region</h3>
+      <div class="chart-sub" id="bar-sub">Click any KPI card above to switch metric</div>
+      <div class="filter-pills" id="bar-pills">
+        <span class="pill on" onclick="switchBar('signups',null,this)">Sign-ups</span>
+        <span class="pill" onclick="switchBar('apps',null,this)">App Downloads</span>
+        <span class="pill" onclick="switchBar('kyc_approved',null,this)">KYC Approved</span>
+        <span class="pill" onclick="switchBar('kyc_pending',null,this)">KYC Pending</span>
+      </div>
+      <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>KYC Status Breakdown</h3>
+      <div class="chart-sub">Distribution across all 44 vets</div>
+      <div class="chart-wrap"><canvas id="donutChart"></canvas></div>
+      <div class="legend">
+        <div class="leg-item"><div class="leg-dot" style="background:#1D9E75"></div>Approved (19)</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#C27A1A"></div>Pending (10)</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#888780"></div>Not started (15)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 2 -->
+  <div class="chart-row triple">
+    <div class="chart-card">
+      <h3>Business Type Mix</h3>
+      <div class="chart-sub">Among registered vets</div>
+      <div class="chart-wrap short"><canvas id="bizChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>App Download Rate</h3>
+      <div class="chart-sub">Downloaded vs not by region</div>
+      <div class="chart-wrap short"><canvas id="appChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>KYC Conversion Rate</h3>
+      <div class="chart-sub">Approved as % of downloaded</div>
+      <div class="chart-wrap short"><canvas id="convChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- KENYA MAP -->
+  <div class="section-head"><h2>Kenya Region Map</h2><hr/></div>
+  <div class="map-card">
+    <div>
+      <h3>Vet Distribution Across Kenya</h3>
+      <div class="chart-sub">Hover or click a region bubble to see details</div>
+      <svg id="kenya-svg" viewBox="0 0 500 520" xmlns="http://www.w3.org/2000/svg">
+        <!-- Simplified Kenya outline -->
+        <defs>
+          <radialGradient id="bgGrad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#E8EDF5"/>
+            <stop offset="100%" stop-color="#D4DCE8"/>
+          </radialGradient>
+        </defs>
+        <!-- Kenya country shape (simplified) -->
+        <path d="M 180 30 L 220 25 L 270 20 L 320 30 L 360 55 L 380 90 L 390 130 L 400 170 L 410 210 L 420 250 L 415 290 L 400 330 L 380 370 L 340 400 L 300 430 L 260 460 L 230 480 L 200 490 L 170 480 L 145 460 L 120 440 L 95 420 L 75 390 L 60 360 L 55 320 L 60 280 L 70 240 L 75 200 L 80 160 L 90 120 L 110 85 L 140 55 Z"
+              fill="url(#bgGrad)" stroke="#B8C4D8" stroke-width="2"/>
+        <!-- Lake Victoria hint -->
+        <ellipse cx="80" cy="320" rx="45" ry="55" fill="#C8DCF0" opacity=".6"/>
+        <text x="58" y="325" font-size="8" fill="#6B8BB8" font-family="DM Sans" font-style="italic">Lake</text>
+        <text x="55" y="335" font-size="8" fill="#6B8BB8" font-family="DM Sans" font-style="italic">Victoria</text>
+        <!-- Nairobi star -->
+        <circle cx="220" cy="310" r="5" fill="#0D2B55" opacity=".4"/>
+        <text x="228" y="314" font-size="9" fill="#0D2B55" font-family="DM Sans" opacity=".6">Nairobi</text>
+
+        <!-- Region bubbles -->
+        <!-- Kajiado: south of Nairobi -->
+        <g class="region-marker" onclick="selectMapRegion('kajiado')" id="map-kajiado">
+          <circle class="region-bubble" cx="220" cy="360" r="32" fill="#185FA5" opacity=".85"/>
+          <text x="220" y="356" text-anchor="middle" font-family="Syne,sans-serif" font-weight="700" font-size="16" fill="#fff">10</text>
+          <text x="220" y="373" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="rgba(255,255,255,.85)">Kajiado</text>
+        </g>
+        <!-- Kiambu: north of Nairobi -->
+        <g class="region-marker" onclick="selectMapRegion('kiambu')" id="map-kiambu">
+          <circle class="region-bubble" cx="215" cy="260" r="38" fill="#1D9E75" opacity=".88"/>
+          <text x="215" y="255" text-anchor="middle" font-family="Syne,sans-serif" font-weight="700" font-size="18" fill="#fff">13</text>
+          <text x="215" y="273" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="rgba(255,255,255,.85)">Kiambu</text>
+        </g>
+        <!-- Voi: south-east coast -->
+        <g class="region-marker" onclick="selectMapRegion('voi')" id="map-voi">
+          <circle class="region-bubble" cx="340" cy="400" r="30" fill="#533AB7" opacity=".85"/>
+          <text x="340" y="396" text-anchor="middle" font-family="Syne,sans-serif" font-weight="700" font-size="16" fill="#fff">9</text>
+          <text x="340" y="413" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="rgba(255,255,255,.85)">Voi</text>
+        </g>
+        <!-- Daniel KAM: Nairobi area -->
+        <g class="region-marker" onclick="selectMapRegion('daniel')" id="map-daniel">
+          <circle class="region-bubble" cx="275" cy="300" r="22" fill="#C27A1A" opacity=".85"/>
+          <text x="275" y="296" text-anchor="middle" font-family="Syne,sans-serif" font-weight="700" font-size="13" fill="#fff">4</text>
+          <text x="275" y="312" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" fill="rgba(255,255,255,.85)">Daniel</text>
+        </g>
+        <!-- Lakebasin: western Kenya -->
+        <g class="region-marker" onclick="selectMapRegion('lakebasin')" id="map-lakebasin">
+          <circle class="region-bubble" cx="110" cy="300" r="26" fill="#A32D2D" opacity=".85"/>
+          <text x="110" y="296" text-anchor="middle" font-family="Syne,sans-serif" font-weight="700" font-size="14" fill="#fff">7</text>
+          <text x="110" y="313" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" fill="rgba(255,255,255,.85)">Lakebasin</text>
+        </g>
+      </svg>
+    </div>
+    <div>
+      <h3>Region Details</h3>
+      <div class="chart-sub">Click a bubble or row to filter all charts</div>
+      <ul class="map-region-list" id="region-list">
+        <li class="map-region-item" onclick="selectMapRegion('kajiado')" id="mri-kajiado">
+          <div class="mri-dot" style="background:#185FA5"></div>
+          <div class="mri-name">Kajiado</div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+            <div class="mri-count" style="color:#185FA5">10</div>
+            <div style="font-size:.68rem;color:var(--muted)">3 KYC ✓ · 7 app</div>
+          </div>
+        </li>
+        <li class="map-region-item" onclick="selectMapRegion('kiambu')" id="mri-kiambu">
+          <div class="mri-dot" style="background:#1D9E75"></div>
+          <div class="mri-name">Kiambu Demo</div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+            <div class="mri-count" style="color:#1D9E75">13</div>
+            <div style="font-size:.68rem;color:var(--muted)">10 KYC ✓ · 10 app</div>
+          </div>
+        </li>
+        <li class="map-region-item" onclick="selectMapRegion('voi')" id="mri-voi">
+          <div class="mri-dot" style="background:#533AB7"></div>
+          <div class="mri-name">Voi Demo</div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+            <div class="mri-count" style="color:#533AB7">9</div>
+            <div style="font-size:.68rem;color:var(--muted)">6 KYC ✓ · 7 app</div>
+          </div>
+        </li>
+        <li class="map-region-item" onclick="selectMapRegion('daniel')" id="mri-daniel">
+          <div class="mri-dot" style="background:#C27A1A"></div>
+          <div class="mri-name">Daniel KAM</div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+            <div class="mri-count" style="color:#C27A1A">4</div>
+            <div style="font-size:.68rem;color:var(--muted)">0 KYC ✓ · 0 app</div>
+          </div>
+        </li>
+        <li class="map-region-item" onclick="selectMapRegion('lakebasin')" id="mri-lakebasin">
+          <div class="mri-dot" style="background:#A32D2D"></div>
+          <div class="mri-name">Lakebasin</div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+            <div class="mri-count" style="color:#A32D2D">7</div>
+            <div style="font-size:.68rem;color:var(--muted)">1 KYC ✓ · 2 app</div>
+          </div>
+        </li>
+      </ul>
+      <div style="margin-top:1rem;padding:10px;background:var(--bg);border-radius:8px;" id="region-detail-box">
+        <div style="font-size:.75rem;color:var(--muted);text-align:center">Click a region to see details</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FUNNEL -->
+  <div class="section-head"><h2>User Journey Funnel</h2><hr/></div>
+  <div class="funnel-card">
+    <h3>Pipeline Drop-off Analysis</h3>
+    <div class="chart-sub">Each stage as % of total engaged vets (44)</div>
+    <div class="funnel-rows" id="funnel-rows"></div>
+  </div>
+
+  <!-- SCORECARD -->
+  <div class="section-head"><h2>Metric Definitions & Ownership</h2><hr/></div>
+  <div class="sc-table-wrap">
+    <h3>Scorecard Alignment</h3>
+    <div class="chart-sub">Definition · measurement · gaps · ownership · cadence for each stage</div>
+    <table class="sc">
+      <thead>
+        <tr>
+          <th>Stage</th>
+          <th>Definition</th>
+          <th>How Measured</th>
+          <th>Status</th>
+          <th>Data Gaps</th>
+          <th>Owner</th>
+          <th>Cadence</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>1. Sign-up</strong></td>
+          <td>Vet engaged and recorded in master list</td>
+          <td>Count of rows with engagement date</td>
+          <td><span class="badge badge-tracked">Tracked</span></td>
+          <td>Manual KAM entry; no app-side event</td>
+          <td><span class="badge badge-owner">KAM</span></td>
+          <td>Weekly</td>
+        </tr>
+        <tr>
+          <td><strong>2. App Download</strong></td>
+          <td>Vet installs and opens BufferPesa app</td>
+          <td>App Downloaded = "Yes" (self-reported)</td>
+          <td><span class="badge badge-partial">Partial</span></td>
+          <td>KAM self-report only; needs product install event</td>
+          <td><span class="badge badge-owner">Product + KAM</span></td>
+          <td>Weekly</td>
+        </tr>
+        <tr>
+          <td><strong>3. KYC</strong></td>
+          <td>All docs uploaded and approved by compliance</td>
+          <td>KYC Status = "Approved" + completion date</td>
+          <td><span class="badge badge-tracked">Tracked</span></td>
+          <td>Dates missing for some Kiambu &amp; Voi records</td>
+          <td><span class="badge badge-owner">Compliance</span></td>
+          <td>Weekly</td>
+        </tr>
+        <tr>
+          <td><strong>4. Activation</strong></td>
+          <td>Vet creates ≥1 service AND completes catalog setup</td>
+          <td>Service Created = Yes AND Catalog Setup = Yes</td>
+          <td><span class="badge badge-notyet">Not Yet</span></td>
+          <td>Both fields blank for all 44 — product event needed</td>
+          <td><span class="badge badge-owner">Product</span></td>
+          <td>Weekly</td>
+        </tr>
+        <tr>
+          <td><strong>5. Invoice Created</strong></td>
+          <td>Vet raises first invoice to a farmer</td>
+          <td>1st Invoice Created date is populated</td>
+          <td><span class="badge badge-notyet">Not Yet</span></td>
+          <td>No invoices raised; depends on activation first</td>
+          <td><span class="badge badge-owner">Product + KAM</span></td>
+          <td>Weekly</td>
+        </tr>
+        <tr>
+          <td><strong>6. Transacting</strong></td>
+          <td>Live collections OR ≥1 invoice sale in period</td>
+          <td>Collections Active = Yes OR Invoice Sales Active = Yes</td>
+          <td><span class="badge badge-notyet">Not Yet</span></td>
+          <td>Depends on farmer KYC; farmer pipeline not tracked</td>
+          <td><span class="badge badge-owner">Commercial</span></td>
+          <td>Weekly</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="height:2rem"></div>
+</main>
+</div>
+
+<div class="map-tooltip" id="map-tooltip"></div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────
+const REGIONS = ['Kajiado','Kiambu','Voi','Daniel','Lakebasin'];
+const COLORS  = ['#185FA5','#1D9E75','#533AB7','#C27A1A','#A32D2D'];
+
+const DATA = {
+  signups:      { label: 'Total Vets by Region',        data: [10,13,9,4,7],  color: '#0D2B55' },
+  apps:         { label: 'App Downloads by Region',      data: [7,10,7,0,2],   color: '#185FA5' },
+  kyc_approved: { label: 'KYC Approved by Region',       data: [3,10,6,0,1],   color: '#1D9E75' },
+  kyc_pending:  { label: 'KYC Pending by Region',        data: [7,3,0,0,0],    color: '#C27A1A' },
+  activated:    { label: 'Fully Activated by Region',    data: [0,0,0,0,0],    color: '#533AB7' },
+  transacting:  { label: 'Active Transacting by Region', data: [0,0,0,0,0],    color: '#A32D2D' },
+};
+
+const REGION_DATA = {
+  kajiado:  { total:10, apps:7,  approved:3,  pending:7,  label:'Kajiado',   color:'#185FA5' },
+  kiambu:   { total:13, apps:10, approved:10, pending:3,  label:'Kiambu Demo', color:'#1D9E75' },
+  voi:      { total:9,  apps:7,  approved:6,  pending:0,  label:'Voi Demo',  color:'#533AB7' },
+  daniel:   { total:4,  apps:0,  approved:0,  pending:0,  label:'Daniel KAM', color:'#C27A1A' },
+  lakebasin:{ total:7,  apps:2,  approved:1,  pending:0,  label:'Lakebasin', color:'#A32D2D' },
+};
+
+let currentKey = 'signups';
+let barChart, donutChart, bizChart, appChart, convChart;
+
+// ── BAR CHART ──────────────────────────────────────────────────────────
+function initBarChart() {
+  const ctx = document.getElementById('barChart').getContext('2d');
+  const d = DATA['signups'];
+  barChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: REGIONS,
+      datasets: [{
+        data: d.data,
+        backgroundColor: COLORS.map(c => c + 'DD'),
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.raw} vets` } }
+      },
+      scales: {
+        y: { beginAtZero: true, ticks: { precision:0, font:{size:11} }, grid: { color:'rgba(0,0,0,0.05)' } },
+        x: { ticks: { font:{size:11} }, grid: { display:false } }
+      }
+    }
+  });
+}
+
+function switchBar(key, cardEl, pillEl) {
+  currentKey = key;
+  const d = DATA[key];
+  barChart.data.datasets[0].data = d.data;
+  barChart.data.datasets[0].backgroundColor = d.data.map((v, i) =>
+    v === 0 ? '#E2E0DA' : COLORS[i] + 'DD'
+  );
+  barChart.update();
+  document.getElementById('bar-title').textContent = d.label;
+
+  // update KPI active
+  document.querySelectorAll('.kpi-card').forEach(c => c.classList.remove('active'));
+  if (cardEl) cardEl.classList.add('active');
+
+  // update pills
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('on'));
+  if (pillEl) pillEl.classList.add('on');
+}
+
+// ── DONUT CHART ────────────────────────────────────────────────────────
+function initDonutChart() {
+  const ctx = document.getElementById('donutChart').getContext('2d');
+  donutChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['KYC Approved','KYC Pending','Not Started'],
+      datasets: [{
+        data: [19, 10, 15],
+        backgroundColor: ['#1D9E75','#C27A1A','#888780'],
+        borderWidth: 3, borderColor: '#FAFAF8'
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '65%',
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.raw} vets (${Math.round(ctx.raw/44*100)}%)` } }
+      }
+    }
+  });
+}
+
+// ── BIZ TYPE ──────────────────────────────────────────────────────────
+function initBizChart() {
+  const ctx = document.getElementById('bizChart').getContext('2d');
+  bizChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Private\nPractice','Mobile\nVet','County\nGovt','Agrovet','Animal\nHealth','Other'],
+      datasets: [{
+        data: [22, 4, 3, 2, 2, 3],
+        backgroundColor: ['#185FA5','#1D9E75','#533AB7','#C27A1A','#3B6D11','#888780'],
+        borderRadius: 5, borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, ticks: { precision:0, font:{size:10} }, grid: { color:'rgba(0,0,0,0.05)' } },
+        x: { ticks: { font:{size:9} }, grid: { display:false } }
+      }
+    }
+  });
+}
+
+// ── APP DOWNLOAD CHART ────────────────────────────────────────────────
+function initAppChart() {
+  const ctx = document.getElementById('appChart').getContext('2d');
+  appChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: REGIONS,
+      datasets: [
+        { label: 'Downloaded', data: [7,10,7,0,2], backgroundColor: '#185FA5CC', borderRadius:5, borderSkipped:false },
+        { label: 'Not Downloaded', data: [3,3,2,4,5], backgroundColor: '#DDD9D0', borderRadius:5, borderSkipped:false }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position:'bottom', labels:{font:{size:10},boxWidth:10} } },
+      scales: {
+        x: { stacked: true, ticks:{font:{size:9}}, grid:{display:false} },
+        y: { stacked: true, beginAtZero:true, ticks:{precision:0,font:{size:10}}, grid:{color:'rgba(0,0,0,0.05)'} }
+      }
+    }
+  });
+}
+
+// ── CONVERSION RATE CHART ─────────────────────────────────────────────
+function initConvChart() {
+  const ctx = document.getElementById('convChart').getContext('2d');
+  convChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: REGIONS,
+      datasets: [{
+        label: 'KYC Approval Rate',
+        data: [43, 100, 86, 0, 50],
+        backgroundColor: COLORS.map(c => c + 'CC'),
+        borderRadius: 5, borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display:false }, tooltip: { callbacks: { label: ctx => ` ${ctx.raw}%` } } },
+      scales: {
+        y: { beginAtZero:true, max:100, ticks:{callback:v=>v+'%',font:{size:10}}, grid:{color:'rgba(0,0,0,0.05)'} },
+        x: { ticks:{font:{size:9}}, grid:{display:false} }
+      }
+    }
+  });
+}
+
+// ── FUNNEL ────────────────────────────────────────────────────────────
+function buildFunnel() {
+  const stages = [
+    { label: 'Sign-up / Total Vets', val: 44, color: '#0D2B55' },
+    { label: 'App Downloaded',        val: 26, color: '#185FA5' },
+    { label: 'KYC Approved',          val: 19, color: '#1D9E75' },
+    { label: 'Fully Activated',       val: 0,  color: '#533AB7' },
+    { label: 'Invoice Created',       val: 0,  color: '#C27A1A' },
+    { label: 'Active Transacting',    val: 0,  color: '#A32D2D' },
+  ];
+  const wrap = document.getElementById('funnel-rows');
+  wrap.innerHTML = stages.map((s, i) => {
+    const barW = Math.max(s.val / 44 * 100, 0);
+    const pct  = Math.round(s.val / 44 * 100);
+    const dropoff = i > 0 ? stages[i-1].val - s.val : 0;
+    return `<div class="f-row">
+      <div class="f-label">${s.label}</div>
+      <div class="f-track">
+        <div class="f-bar" style="width:${barW}%;background:${s.color}">
+          ${s.val > 0 ? `<span class="f-bar-lbl">${s.val}</span>` : ''}
+        </div>
+      </div>
+      <div class="f-count" style="color:${s.color}">${s.val > 0 ? s.val : '—'}</div>
+      <div class="f-pct">${s.val > 0 ? pct+'%' : '—'}</div>
+      <div class="f-drop">${dropoff > 0 ? '−'+dropoff+' lost' : i === 0 ? '' : '—'}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── MAP REGION SELECT ─────────────────────────────────────────────────
+let selectedRegion = null;
+
+function selectMapRegion(key) {
+  selectedRegion = selectedRegion === key ? null : key;
+
+  // reset all bubbles
+  document.querySelectorAll('.region-bubble').forEach(b => {
+    b.style.opacity = selectedRegion ? '0.4' : '0.85';
+    b.style.filter = '';
+  });
+  document.querySelectorAll('.map-region-item').forEach(i => i.classList.remove('active'));
+
+  if (selectedRegion) {
+    const bub = document.querySelector(`#map-${selectedRegion} .region-bubble`);
+    if (bub) { bub.style.opacity = '1'; bub.style.filter = 'drop-shadow(0 4px 12px rgba(0,0,0,.3))'; }
+    document.getElementById(`mri-${selectedRegion}`).classList.add('active');
+
+    const rd = REGION_DATA[selectedRegion];
+    document.getElementById('region-detail-box').innerHTML = `
+      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;color:${rd.color};margin-bottom:.5rem">${rd.label}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <div style="background:#fff;border-radius:6px;padding:6px 8px;text-align:center">
+          <div style="font-family:'Syne';font-weight:700;font-size:1.3rem;color:${rd.color}">${rd.total}</div>
+          <div style="font-size:.68rem;color:var(--muted)">Total Vets</div>
+        </div>
+        <div style="background:#fff;border-radius:6px;padding:6px 8px;text-align:center">
+          <div style="font-family:'Syne';font-weight:700;font-size:1.3rem;color:#185FA5">${rd.apps}</div>
+          <div style="font-size:.68rem;color:var(--muted)">App Downloads</div>
+        </div>
+        <div style="background:#EAF3DE;border-radius:6px;padding:6px 8px;text-align:center">
+          <div style="font-family:'Syne';font-weight:700;font-size:1.3rem;color:#3B6D11">${rd.approved}</div>
+          <div style="font-size:.68rem;color:var(--muted)">KYC Approved</div>
+        </div>
+        <div style="background:#FEF3DC;border-radius:6px;padding:6px 8px;text-align:center">
+          <div style="font-family:'Syne';font-weight:700;font-size:1.3rem;color:#854F0B">${rd.pending}</div>
+          <div style="font-size:.68rem;color:var(--muted)">KYC Pending</div>
+        </div>
+      </div>
+    `;
+    // Update bar chart to show selected region
+    updateBarForRegion(selectedRegion);
+  } else {
+    document.getElementById('region-detail-box').innerHTML =
+      '<div style="font-size:.75rem;color:var(--muted);text-align:center">Click a region to see details</div>';
+    switchBar(currentKey);
+  }
+}
+
+function updateBarForRegion(key) {
+  const rd = REGION_DATA[key];
+  barChart.data.labels = ['Sign-ups','App Downloads','KYC Approved','KYC Pending','Activated','Transacting'];
+  barChart.data.datasets[0].data = [rd.total, rd.apps, rd.approved, rd.pending, 0, 0];
+  barChart.data.datasets[0].backgroundColor = ['#0D2B55','#185FA5','#1D9E75','#C27A1A','#533AB7','#A32D2D'].map((c,i) =>
+    [rd.total, rd.apps, rd.approved, rd.pending, 0, 0][i] === 0 && i > 3 ? '#E2E0DA' : c + 'DD'
+  );
+  document.getElementById('bar-title').textContent = `${rd.label} — Journey Breakdown`;
+  barChart.update();
+}
+
+// sidebar region filter
+function setMetric(key, el) {
+  document.querySelectorAll('.aside-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+  if (key === 'all') {
+    selectedRegion = null;
+    selectMapRegion(null);
+    switchBar(currentKey);
+    // reset bubbles
+    document.querySelectorAll('.region-bubble').forEach(b => { b.style.opacity='0.85'; b.style.filter=''; });
+  } else {
+    selectMapRegion(key);
+  }
+}
+
+function highlightStage(s) {}
+function filterKYC(s) {}
+
+// NAV TABS
+document.querySelectorAll('.nav-tab').forEach(tab => {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    this.classList.add('active');
+    const targets = { 'Overview': null, 'Funnel': '.funnel-card', 'Map': '.map-card', 'Scorecard': '.sc-table-wrap' };
+    const target = targets[this.textContent];
+    if (target) document.querySelector(target)?.scrollIntoView({ behavior:'smooth', block:'start' });
+    else window.scrollTo({ top:0, behavior:'smooth' });
+  });
+});
+
+// ── INIT ──────────────────────────────────────────────────────────────
+initBarChart();
+initDonutChart();
+initBizChart();
+initAppChart();
+initConvChart();
+buildFunnel();
+</script>
+</body>
+</html>
